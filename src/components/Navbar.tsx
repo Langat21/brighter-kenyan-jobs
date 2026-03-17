@@ -1,11 +1,14 @@
 import { useState } from "react";
-import { Link, useLocation } from "react-router-dom";
-import { Briefcase, Menu, X, Search } from "lucide-react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import { Briefcase, Menu, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useAuth } from "@/contexts/AuthContext";
 
 const Navbar = () => {
   const [mobileOpen, setMobileOpen] = useState(false);
   const location = useLocation();
+  const navigate = useNavigate();
+  const { user, signOut } = useAuth();
 
   return (
     <header className="sticky top-0 z-50 border-b border-border bg-card/80 backdrop-blur-lg">
@@ -43,12 +46,23 @@ const Navbar = () => {
         </nav>
 
         <div className="hidden items-center gap-3 md:flex">
-          <Button variant="ghost" size="sm">
-            Log In
-          </Button>
-          <Button size="sm" className="bg-gradient-hero text-primary-foreground hover:opacity-90">
-            Sign Up
-          </Button>
+          {user ? (
+            <>
+              <span className="text-sm text-muted-foreground">{user.email}</span>
+              <Button variant="ghost" size="sm" onClick={() => signOut()}>
+                Log Out
+              </Button>
+            </>
+          ) : (
+            <>
+              <Button variant="ghost" size="sm" onClick={() => navigate("/auth")}>
+                Log In
+              </Button>
+              <Button size="sm" className="bg-gradient-hero text-primary-foreground hover:opacity-90" onClick={() => navigate("/auth")}>
+                Sign Up
+              </Button>
+            </>
+          )}
         </div>
 
         <button
@@ -63,35 +77,21 @@ const Navbar = () => {
       {mobileOpen && (
         <div className="border-t border-border bg-card px-4 pb-4 md:hidden">
           <nav className="flex flex-col gap-1 pt-2">
-            <Link
-              to="/jobs"
-              className="rounded-md px-3 py-2 text-sm font-medium text-foreground hover:bg-muted"
-              onClick={() => setMobileOpen(false)}
-            >
-              Find Jobs
-            </Link>
-            <Link
-              to="/jobs"
-              className="rounded-md px-3 py-2 text-sm font-medium text-muted-foreground hover:bg-muted"
-              onClick={() => setMobileOpen(false)}
-            >
-              For Employers
-            </Link>
-            <Link
-              to="/jobs"
-              className="rounded-md px-3 py-2 text-sm font-medium text-muted-foreground hover:bg-muted"
-              onClick={() => setMobileOpen(false)}
-            >
-              Pricing
-            </Link>
+            <Link to="/jobs" className="rounded-md px-3 py-2 text-sm font-medium text-foreground hover:bg-muted" onClick={() => setMobileOpen(false)}>Find Jobs</Link>
+            <Link to="/jobs" className="rounded-md px-3 py-2 text-sm font-medium text-muted-foreground hover:bg-muted" onClick={() => setMobileOpen(false)}>For Employers</Link>
+            <Link to="/jobs" className="rounded-md px-3 py-2 text-sm font-medium text-muted-foreground hover:bg-muted" onClick={() => setMobileOpen(false)}>Pricing</Link>
           </nav>
           <div className="mt-3 flex flex-col gap-2">
-            <Button variant="outline" size="sm" className="w-full">
-              Log In
-            </Button>
-            <Button size="sm" className="w-full bg-gradient-hero text-primary-foreground">
-              Sign Up
-            </Button>
+            {user ? (
+              <Button variant="outline" size="sm" className="w-full" onClick={() => { signOut(); setMobileOpen(false); }}>
+                Log Out
+              </Button>
+            ) : (
+              <>
+                <Button variant="outline" size="sm" className="w-full" onClick={() => { navigate("/auth"); setMobileOpen(false); }}>Log In</Button>
+                <Button size="sm" className="w-full bg-gradient-hero text-primary-foreground" onClick={() => { navigate("/auth"); setMobileOpen(false); }}>Sign Up</Button>
+              </>
+            )}
           </div>
         </div>
       )}

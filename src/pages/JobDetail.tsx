@@ -1,19 +1,23 @@
 import { useState } from "react";
-import { useParams, Link } from "react-router-dom";
+import { useParams, Link, useNavigate } from "react-router-dom";
 import { ArrowLeft, MapPin, Clock, Building, BadgeCheck, Bookmark, Share2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import JobCard from "@/components/JobCard";
 import MpesaPaymentModal from "@/components/MpesaPaymentModal";
+import { useAuth } from "@/contexts/AuthContext";
+import { useSubscription } from "@/hooks/useSubscription";
 import { mockJobs } from "@/data/mockJobs";
+import { toast } from "sonner";
 
 const JobDetail = () => {
   const { id } = useParams();
+  const navigate = useNavigate();
   const job = mockJobs.find((j) => j.id === id);
+  const { user } = useAuth();
+  const { isSubscribed, recordSubscription } = useSubscription();
   const [paymentOpen, setPaymentOpen] = useState(false);
-  const [paymentAmount, setPaymentAmount] = useState(99);
-  const [paymentLabel, setPaymentLabel] = useState("Application Fee");
 
   if (!job) {
     return (
@@ -32,9 +36,17 @@ const JobDetail = () => {
   const daysAgo = Math.max(0, Math.floor((Date.now() - new Date(job.postedAt).getTime()) / 86400000));
   const similar = mockJobs.filter((j) => j.id !== job.id && j.category === job.category).slice(0, 3);
 
-  const openPayment = (amount: number, label: string) => {
-    setPaymentAmount(amount);
-    setPaymentLabel(label);
+  const handleApply = () => {
+    if (!user) {
+      toast.info("Please sign in to apply for jobs");
+      navigate("/auth");
+      return;
+    }
+    if (isSubscribed) {
+      toast.success("Application submitted! You'll hear back soon.");
+      return;
+    }
+    // Not subscribed — show payment modal
     setPaymentOpen(true);
   };
 
@@ -87,7 +99,6 @@ const JobDetail = () => {
                 <h2 className="text-base font-semibold text-foreground mb-2">Job Description</h2>
                 <p className="text-sm text-muted-foreground leading-relaxed">{job.description}</p>
               </div>
-
               <div>
                 <h2 className="text-base font-semibold text-foreground mb-2">Requirements</h2>
                 <ul className="space-y-1.5">
@@ -99,7 +110,6 @@ const JobDetail = () => {
                   ))}
                 </ul>
               </div>
-
               <div>
                 <h2 className="text-base font-semibold text-foreground mb-2">Skills Required</h2>
                 <div className="flex flex-wrap gap-2">
@@ -108,7 +118,6 @@ const JobDetail = () => {
                   ))}
                 </div>
               </div>
-
               <div>
                 <h2 className="text-base font-semibold text-foreground mb-2">Benefits</h2>
                 <div className="flex flex-wrap gap-2">
@@ -123,22 +132,26 @@ const JobDetail = () => {
           {/* Sidebar */}
           <div className="space-y-4">
             <div className="rounded-xl border border-border bg-card p-6 shadow-card sticky top-20">
-              <Button
-                className="w-full bg-gradient-accent text-secondary-foreground hover:opacity-90 text-base py-5"
-                onClick={() => openPayment(99, "Application Fee")}
-              >
-                Apply Now — KES 99
-              </Button>
-              <p className="mt-2 text-center text-xs text-muted-foreground">
-                or{" "}
-                <button
-                  className="text-primary hover:underline"
-                  onClick={() => openPayment(499, "Monthly Subscription")}
+              {isSubscribed ? (
+                <Button
+                  className="w-full bg-gradient-accent text-secondary-foreground hover:opacity-90 text-base py-5"
+                  onClick={handleApply}
                 >
-                  subscribe for KES 499/mo
-                </button>{" "}
-                for unlimited
-              </p>
+                  Apply Now
+                </Button>
+              ) : (
+                <>
+                  <Button
+                    className="w-full bg-gradient-accent text-secondary-foreground hover:opacity-90 text-base py-5"
+                    onClick={handleApply}
+                  >
+                    Apply Now — KES 49/week
+                  </Button>
+                  <p className="mt-2 text-center text-xs text-muted-foreground">
+                    Weekly subscription for unlimited job applications
+                  </p>
+                </>
+              )}
 
               <div className="mt-6 space-y-3 border-t border-border pt-4">
                 <div className="flex justify-between text-sm">
@@ -177,8 +190,12 @@ const JobDetail = () => {
       <MpesaPaymentModal
         isOpen={paymentOpen}
         onClose={() => setPaymentOpen(false)}
-        amount={paymentAmount}
-        amountLabel={paymentLabel}
+        amount={49}
+        amountLabel="Weekly Subscription"
+        onPaymentSuccess={async (transactionId) => {
+          await recordSubscription(transactionId);
+          toast.success("Subscription active! You can now apply to unlimited jobs.");
+        }}
       />
     </div>
   );
