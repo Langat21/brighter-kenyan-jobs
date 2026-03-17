@@ -7,12 +7,19 @@ import { Label } from "@/components/ui/label";
 import { CheckCircle2, Loader2, AlertCircle, Smartphone } from "lucide-react";
 import { useMpesaPayment } from "@/lib/mpesa/useMpesaPayment";
 import { isValidKenyanPhone, formatPhoneForDisplay } from "@/lib/mpesa/phoneUtils";
-import type { MpesaPaymentModalProps } from "@/lib/mpesa/types";
 import { toast } from "sonner";
+
+interface MpesaPaymentModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  amount: number;
+  amountLabel?: string;
+  onPaymentSuccess?: (transactionId: string) => void;
+}
 
 const phoneSchema = z.string().min(1, "Phone number is required").refine(isValidKenyanPhone, "Enter a valid Safaricom number (e.g. 0712345678)");
 
-const MpesaPaymentModal = ({ isOpen, onClose, amount, amountLabel = "Application Fee" }: MpesaPaymentModalProps) => {
+const MpesaPaymentModal = ({ isOpen, onClose, amount, amountLabel = "Weekly Subscription", onPaymentSuccess }: MpesaPaymentModalProps) => {
   const [phone, setPhone] = useState("");
   const [phoneError, setPhoneError] = useState("");
 
@@ -21,6 +28,7 @@ const MpesaPaymentModal = ({ isOpen, onClose, amount, amountLabel = "Application
       toast.success("Payment successful!", {
         description: `Transaction ID: ${result.transactionId}`,
       });
+      onPaymentSuccess?.(result.transactionId || "");
     },
   });
 
@@ -52,15 +60,15 @@ const MpesaPaymentModal = ({ isOpen, onClose, amount, amountLabel = "Application
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle className="text-foreground">M-PESA Payment</DialogTitle>
-          <DialogDescription>{amountLabel}</DialogDescription>
+          <DialogDescription>{amountLabel} — 7 days unlimited access</DialogDescription>
         </DialogHeader>
 
-        {/* Idle — phone input */}
         {paymentStatus === "idle" && (
           <div className="space-y-4">
             <div className="rounded-lg bg-muted p-4 text-center">
               <p className="text-sm text-muted-foreground">{amountLabel}</p>
               <p className="text-2xl font-bold text-foreground">KES {amount.toLocaleString()}</p>
+              <p className="text-xs text-muted-foreground mt-1">Unlimited job applications for 7 days</p>
             </div>
             <div className="space-y-2">
               <Label htmlFor="mpesa-phone">Safaricom Phone Number</Label>
@@ -79,7 +87,6 @@ const MpesaPaymentModal = ({ isOpen, onClose, amount, amountLabel = "Application
           </div>
         )}
 
-        {/* Initiating */}
         {paymentStatus === "initiating" && (
           <div className="flex flex-col items-center gap-4 py-8">
             <Loader2 className="h-10 w-10 animate-spin text-primary" />
@@ -87,7 +94,6 @@ const MpesaPaymentModal = ({ isOpen, onClose, amount, amountLabel = "Application
           </div>
         )}
 
-        {/* Pending — waiting for user PIN */}
         {paymentStatus === "pending" && (
           <div className="flex flex-col items-center gap-4 py-8">
             <div className="relative">
@@ -104,7 +110,6 @@ const MpesaPaymentModal = ({ isOpen, onClose, amount, amountLabel = "Application
           </div>
         )}
 
-        {/* Success */}
         {paymentStatus === "success" && (
           <div className="flex flex-col items-center gap-4 py-8">
             <CheckCircle2 className="h-12 w-12 text-secondary" />
@@ -118,7 +123,6 @@ const MpesaPaymentModal = ({ isOpen, onClose, amount, amountLabel = "Application
           </div>
         )}
 
-        {/* Failed / Timeout */}
         {(paymentStatus === "failed" || paymentStatus === "timeout") && (
           <div className="flex flex-col items-center gap-4 py-8">
             <AlertCircle className="h-12 w-12 text-destructive" />
