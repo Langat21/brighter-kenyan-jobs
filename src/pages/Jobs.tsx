@@ -1,15 +1,16 @@
 import { useState, useMemo } from "react";
 import { useSearchParams } from "react-router-dom";
-import { Filter, X } from "lucide-react";
+import { Filter, X, Globe } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import JobCard from "@/components/JobCard";
+import ScrapedJobCard from "@/components/ScrapedJobCard";
 import { mockJobs, categories, locations } from "@/data/mockJobs";
+import { useScrapedJobs } from "@/hooks/useScrapedJobs";
 
 const jobTypes = ["Remote", "Hybrid", "On-site"];
 const experienceLevels = ["Entry", "Mid", "Senior", "Executive"];
-const employmentTypes = ["Full-time", "Part-time", "Contract", "Freelance"];
 
 const Jobs = () => {
   const [searchParams] = useSearchParams();
@@ -22,6 +23,15 @@ const Jobs = () => {
   const [selectedLevel, setSelectedLevel] = useState("");
   const [selectedLocation, setSelectedLocation] = useState(searchParams.get("location") || "");
   const [showFilters, setShowFilters] = useState(false);
+  const [activeTab, setActiveTab] = useState<"local" | "global">("local");
+
+  // Scraped jobs from DB
+  const { jobs: scrapedJobs, loading: scrapedLoading } = useScrapedJobs({
+    query: activeTab === "global" ? query : undefined,
+    category: activeTab === "global" ? selectedCategory : undefined,
+    location: activeTab === "global" ? selectedLocation : undefined,
+    limit: 200,
+  });
 
   const filtered = useMemo(() => {
     return mockJobs.filter((job) => {
@@ -63,39 +73,43 @@ const Jobs = () => {
         </div>
       </div>
 
-      <div>
-        <h4 className="mb-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Job Type</h4>
-        <div className="flex flex-wrap gap-2">
-          {jobTypes.map((type) => (
-            <button
-              key={type}
-              onClick={() => setSelectedJobType(selectedJobType === type ? "" : type)}
-              className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${
-                selectedJobType === type ? "bg-primary text-primary-foreground" : "border border-border text-foreground hover:bg-muted"
-              }`}
-            >
-              {type}
-            </button>
-          ))}
-        </div>
-      </div>
+      {activeTab === "local" && (
+        <>
+          <div>
+            <h4 className="mb-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Job Type</h4>
+            <div className="flex flex-wrap gap-2">
+              {jobTypes.map((type) => (
+                <button
+                  key={type}
+                  onClick={() => setSelectedJobType(selectedJobType === type ? "" : type)}
+                  className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${
+                    selectedJobType === type ? "bg-primary text-primary-foreground" : "border border-border text-foreground hover:bg-muted"
+                  }`}
+                >
+                  {type}
+                </button>
+              ))}
+            </div>
+          </div>
 
-      <div>
-        <h4 className="mb-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Experience</h4>
-        <div className="flex flex-wrap gap-2">
-          {experienceLevels.map((level) => (
-            <button
-              key={level}
-              onClick={() => setSelectedLevel(selectedLevel === level ? "" : level)}
-              className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${
-                selectedLevel === level ? "bg-primary text-primary-foreground" : "border border-border text-foreground hover:bg-muted"
-              }`}
-            >
-              {level}
-            </button>
-          ))}
-        </div>
-      </div>
+          <div>
+            <h4 className="mb-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Experience</h4>
+            <div className="flex flex-wrap gap-2">
+              {experienceLevels.map((level) => (
+                <button
+                  key={level}
+                  onClick={() => setSelectedLevel(selectedLevel === level ? "" : level)}
+                  className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${
+                    selectedLevel === level ? "bg-primary text-primary-foreground" : "border border-border text-foreground hover:bg-muted"
+                  }`}
+                >
+                  {level}
+                </button>
+              ))}
+            </div>
+          </div>
+        </>
+      )}
 
       <div>
         <h4 className="mb-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Location</h4>
@@ -121,7 +135,7 @@ const Jobs = () => {
       <Navbar />
       <main className="container mx-auto px-4 py-8">
         {/* Search bar */}
-        <div className="mb-6 flex items-center gap-3">
+        <div className="mb-4 flex items-center gap-3">
           <div className="flex flex-1 items-center gap-2 rounded-xl border border-border bg-card px-4 py-2.5">
             <input
               type="text"
@@ -139,6 +153,31 @@ const Jobs = () => {
           >
             <Filter className="h-4 w-4" />
           </Button>
+        </div>
+
+        {/* Tabs */}
+        <div className="mb-6 flex gap-1 rounded-lg bg-muted p-1 w-fit">
+          <button
+            onClick={() => setActiveTab("local")}
+            className={`rounded-md px-4 py-2 text-sm font-medium transition-colors ${
+              activeTab === "local"
+                ? "bg-card text-foreground shadow-sm"
+                : "text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            🇰🇪 Kenya Jobs
+          </button>
+          <button
+            onClick={() => setActiveTab("global")}
+            className={`rounded-md px-4 py-2 text-sm font-medium transition-colors flex items-center gap-1.5 ${
+              activeTab === "global"
+                ? "bg-card text-foreground shadow-sm"
+                : "text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            <Globe className="h-3.5 w-3.5" />
+            Global Remote
+          </button>
         </div>
 
         {hasFilters && (
@@ -164,27 +203,56 @@ const Jobs = () => {
               </div>
               <FilterPanel />
               <Button className="mt-6 w-full bg-gradient-hero text-primary-foreground" onClick={() => setShowFilters(false)}>
-                Show {filtered.length} Results
+                Show Results
               </Button>
             </div>
           )}
 
           {/* Results */}
           <div className="flex-1">
-            <p className="mb-4 text-sm text-muted-foreground">
-              <span className="font-semibold text-foreground">{filtered.length}</span> jobs found
-            </p>
-            {filtered.length > 0 ? (
-              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-2">
-                {filtered.map((job) => (
-                  <JobCard key={job.id} job={job} />
-                ))}
-              </div>
+            {activeTab === "local" ? (
+              <>
+                <p className="mb-4 text-sm text-muted-foreground">
+                  <span className="font-semibold text-foreground">{filtered.length}</span> jobs found
+                </p>
+                {filtered.length > 0 ? (
+                  <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-2">
+                    {filtered.map((job) => (
+                      <JobCard key={job.id} job={job} />
+                    ))}
+                  </div>
+                ) : (
+                  <div className="py-20 text-center">
+                    <p className="text-lg font-semibold text-foreground">No jobs found</p>
+                    <p className="mt-1 text-sm text-muted-foreground">Try adjusting your filters</p>
+                  </div>
+                )}
+              </>
             ) : (
-              <div className="py-20 text-center">
-                <p className="text-lg font-semibold text-foreground">No jobs found</p>
-                <p className="mt-1 text-sm text-muted-foreground">Try adjusting your filters</p>
-              </div>
+              <>
+                <p className="mb-4 text-sm text-muted-foreground">
+                  <span className="font-semibold text-foreground">{scrapedJobs.length}</span> remote jobs aggregated
+                  {scrapedLoading && " · Loading..."}
+                </p>
+                {scrapedJobs.length > 0 ? (
+                  <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-2">
+                    {scrapedJobs.map((job) => (
+                      <ScrapedJobCard key={job.id} job={job} />
+                    ))}
+                  </div>
+                ) : scrapedLoading ? (
+                  <div className="py-20 text-center">
+                    <p className="text-lg font-semibold text-foreground">Loading remote jobs...</p>
+                  </div>
+                ) : (
+                  <div className="py-20 text-center">
+                    <p className="text-lg font-semibold text-foreground">No remote jobs yet</p>
+                    <p className="mt-1 text-sm text-muted-foreground">
+                      Jobs are scraped every 4 hours from Remotive, Arbeitnow & RemoteOK
+                    </p>
+                  </div>
+                )}
+              </>
             )}
           </div>
         </div>
