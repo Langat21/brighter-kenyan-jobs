@@ -26,11 +26,3 @@ export interface MpesaPaymentConfig {
   onFailure?: (result: PaymentResult) => void;
   onTimeout?: () => void;
 }
-
-/** Props for MpesaPaymentModal */
-export interface MpesaPaymentModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-  amount: number;
-  amountLabel?: string;
-}
