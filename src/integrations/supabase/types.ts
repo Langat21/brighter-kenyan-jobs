@@ -44,6 +44,63 @@ export type Database = {
         }
         Relationships: []
       }
+      scraped_jobs: {
+        Row: {
+          category: string | null
+          company: string
+          created_at: string
+          description: string | null
+          hash: string
+          id: string
+          location: string | null
+          posted_at: string | null
+          salary_max: number | null
+          salary_min: number | null
+          scraped_at: string
+          seniority: string | null
+          source: string
+          source_url: string
+          tags: string[] | null
+          title: string
+        }
+        Insert: {
+          category?: string | null
+          company: string
+          created_at?: string
+          description?: string | null
+          hash: string
+          id?: string
+          location?: string | null
+          posted_at?: string | null
+          salary_max?: number | null
+          salary_min?: number | null
+          scraped_at?: string
+          seniority?: string | null
+          source: string
+          source_url: string
+          tags?: string[] | null
+          title: string
+        }
+        Update: {
+          category?: string | null
+          company?: string
+          created_at?: string
+          description?: string | null
+          hash?: string
+          id?: string
+          location?: string | null
+          posted_at?: string | null
+          salary_max?: number | null
+          salary_min?: number | null
+          scraped_at?: string
+          seniority?: string | null
+          source?: string
+          source_url?: string
+          tags?: string[] | null
+          title?: string
+        }
+        Relationships: []
+      }
       weekly_subscriptions: {
         Row: {
           amount: number
