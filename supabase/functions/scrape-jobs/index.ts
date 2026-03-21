@@ -164,7 +164,6 @@ serve(async (req) => {
       sources: {
         remotive: remotiveJobs.length,
         arbeitnow: arbeitnowJobs.length,
-        remoteok: remoteokJobs.length,
       },
     };
 
