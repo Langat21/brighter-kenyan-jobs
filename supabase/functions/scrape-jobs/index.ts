@@ -31,7 +31,7 @@ async function hashText(text: string): Promise<string> {
 }
 
 async function hashJob(j: RawJob): Promise<string> {
-  return md5(`${j.title}|${j.company}|${j.location}`.toLowerCase().trim());
+  return hashText(`${j.title}|${j.company}|${j.location}`.toLowerCase().trim());
 }
 
 // ── Source: Remotive (REST API) ────────────────────────────────────
