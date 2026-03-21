@@ -108,14 +108,13 @@ serve(async (req) => {
     console.log("Starting job scrape...");
 
     // Fetch from all sources in parallel
-    const [remotiveJobs, arbeitnowJobs, remoteokJobs] = await Promise.all([
+    const [remotiveJobs, arbeitnowJobs] = await Promise.all([
       scrapeRemotive(),
       scrapeArbeitnow(),
-      scrapeRemoteOK(),
     ]);
 
-    const allJobs = [...remotiveJobs, ...arbeitnowJobs, ...remoteokJobs];
-    console.log(`Scraped ${allJobs.length} total jobs (Remotive: ${remotiveJobs.length}, Arbeitnow: ${arbeitnowJobs.length}, RemoteOK: ${remoteokJobs.length})`);
+    const allJobs = [...remotiveJobs, ...arbeitnowJobs];
+    console.log(`Scraped ${allJobs.length} total jobs (Remotive: ${remotiveJobs.length}, Arbeitnow: ${arbeitnowJobs.length})`);
 
     if (allJobs.length === 0) {
       return new Response(
