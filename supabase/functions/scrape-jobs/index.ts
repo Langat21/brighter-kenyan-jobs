@@ -92,38 +92,7 @@ async function scrapeArbeitnow(): Promise<RawJob[]> {
   return jobs;
 }
 
-// ── Source: RemoteOK (REST API) ────────────────────────────────────
-async function scrapeRemoteOK(): Promise<RawJob[]> {
-  const jobs: RawJob[] = [];
-  try {
-    const resp = await fetch("https://remoteok.com/api", {
-      headers: { "User-Agent": "BrighterJobs/1.0" },
-    });
-    if (!resp.ok) throw new Error(`RemoteOK ${resp.status}`);
-    const data = await resp.json();
-    // First element is metadata, skip it
-    for (const j of data.slice(1)) {
-      if (!j.position) continue;
-      jobs.push({
-        title: j.position,
-        company: j.company || "Unknown",
-        location: j.location || "Remote",
-        description: j.description || "",
-        tags: j.tags || [],
-        category: "",
-        seniority: "",
-        salary_min: j.salary_min ? Number(j.salary_min) : null,
-        salary_max: j.salary_max ? Number(j.salary_max) : null,
-        source: "remoteok",
-        source_url: j.url || `https://remoteok.com/l/${j.id}`,
-        posted_at: j.date || null,
-      });
-    }
-  } catch (e) {
-    console.error("RemoteOK scrape error:", e);
-  }
-  return jobs;
-}
+// ── Source: RemoteOK — currently blocked (403), kept as placeholder ──
 
 // ── Main handler ───────────────────────────────────────────────────
 serve(async (req) => {
