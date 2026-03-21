@@ -24,10 +24,10 @@ interface RawJob {
 }
 
 // ── MD5 hash for deduplication ─────────────────────────────────────
-async function md5(text: string): Promise<string> {
+async function hashText(text: string): Promise<string> {
   const data = new TextEncoder().encode(text);
-  const buf = await crypto.subtle.digest("MD5", data);
-  return [...new Uint8Array(buf)].map((b) => b.toString(16).padStart(2, "0")).join("");
+  const buf = await crypto.subtle.digest("SHA-256", data);
+  return [...new Uint8Array(buf)].map((b) => b.toString(16).padStart(2, "0")).join("").slice(0, 32);
 }
 
 async function hashJob(j: RawJob): Promise<string> {
