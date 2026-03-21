@@ -24,14 +24,14 @@ interface RawJob {
 }
 
 // ── MD5 hash for deduplication ─────────────────────────────────────
-async function md5(text: string): Promise<string> {
+async function hashText(text: string): Promise<string> {
   const data = new TextEncoder().encode(text);
-  const buf = await crypto.subtle.digest("MD5", data);
-  return [...new Uint8Array(buf)].map((b) => b.toString(16).padStart(2, "0")).join("");
+  const buf = await crypto.subtle.digest("SHA-256", data);
+  return [...new Uint8Array(buf)].map((b) => b.toString(16).padStart(2, "0")).join("").slice(0, 32);
 }
 
 async function hashJob(j: RawJob): Promise<string> {
-  return md5(`${j.title}|${j.company}|${j.location}`.toLowerCase().trim());
+  return hashText(`${j.title}|${j.company}|${j.location}`.toLowerCase().trim());
 }
 
 // ── Source: Remotive (REST API) ────────────────────────────────────
@@ -92,38 +92,7 @@ async function scrapeArbeitnow(): Promise<RawJob[]> {
   return jobs;
 }
 
-// ── Source: RemoteOK (REST API) ────────────────────────────────────
-async function scrapeRemoteOK(): Promise<RawJob[]> {
-  const jobs: RawJob[] = [];
-  try {
-    const resp = await fetch("https://remoteok.com/api", {
-      headers: { "User-Agent": "BrighterJobs/1.0" },
-    });
-    if (!resp.ok) throw new Error(`RemoteOK ${resp.status}`);
-    const data = await resp.json();
-    // First element is metadata, skip it
-    for (const j of data.slice(1)) {
-      if (!j.position) continue;
-      jobs.push({
-        title: j.position,
-        company: j.company || "Unknown",
-        location: j.location || "Remote",
-        description: j.description || "",
-        tags: j.tags || [],
-        category: "",
-        seniority: "",
-        salary_min: j.salary_min ? Number(j.salary_min) : null,
-        salary_max: j.salary_max ? Number(j.salary_max) : null,
-        source: "remoteok",
-        source_url: j.url || `https://remoteok.com/l/${j.id}`,
-        posted_at: j.date || null,
-      });
-    }
-  } catch (e) {
-    console.error("RemoteOK scrape error:", e);
-  }
-  return jobs;
-}
+// ── Source: RemoteOK — currently blocked (403), kept as placeholder ──
 
 // ── Main handler ───────────────────────────────────────────────────
 serve(async (req) => {
@@ -139,14 +108,13 @@ serve(async (req) => {
     console.log("Starting job scrape...");
 
     // Fetch from all sources in parallel
-    const [remotiveJobs, arbeitnowJobs, remoteokJobs] = await Promise.all([
+    const [remotiveJobs, arbeitnowJobs] = await Promise.all([
       scrapeRemotive(),
       scrapeArbeitnow(),
-      scrapeRemoteOK(),
     ]);
 
-    const allJobs = [...remotiveJobs, ...arbeitnowJobs, ...remoteokJobs];
-    console.log(`Scraped ${allJobs.length} total jobs (Remotive: ${remotiveJobs.length}, Arbeitnow: ${arbeitnowJobs.length}, RemoteOK: ${remoteokJobs.length})`);
+    const allJobs = [...remotiveJobs, ...arbeitnowJobs];
+    console.log(`Scraped ${allJobs.length} total jobs (Remotive: ${remotiveJobs.length}, Arbeitnow: ${arbeitnowJobs.length})`);
 
     if (allJobs.length === 0) {
       return new Response(
@@ -174,12 +142,14 @@ serve(async (req) => {
 
     let inserted = 0;
     if (newJobs.length > 0) {
-      // Insert in batches of 100
-      for (let i = 0; i < newJobs.length; i += 100) {
-        const batch = newJobs.slice(i, i + 100);
-        const { error } = await supabase.from("scraped_jobs").insert(batch);
+      // Insert in batches of 50 with upsert to handle race conditions
+      for (let i = 0; i < newJobs.length; i += 50) {
+        const batch = newJobs.slice(i, i + 50);
+        const { error, count } = await supabase
+          .from("scraped_jobs")
+          .upsert(batch, { onConflict: "hash", ignoreDuplicates: true });
         if (error) {
-          console.error(`Batch insert error at ${i}:`, error.message);
+          console.error(`Batch upsert error at ${i}:`, error.message);
         } else {
           inserted += batch.length;
         }
@@ -194,7 +164,6 @@ serve(async (req) => {
       sources: {
         remotive: remotiveJobs.length,
         arbeitnow: arbeitnowJobs.length,
-        remoteok: remoteokJobs.length,
       },
     };
 
