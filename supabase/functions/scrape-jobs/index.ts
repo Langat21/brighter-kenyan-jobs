@@ -142,12 +142,14 @@ serve(async (req) => {
 
     let inserted = 0;
     if (newJobs.length > 0) {
-      // Insert in batches of 100
-      for (let i = 0; i < newJobs.length; i += 100) {
-        const batch = newJobs.slice(i, i + 100);
-        const { error } = await supabase.from("scraped_jobs").insert(batch);
+      // Insert in batches of 50 with upsert to handle race conditions
+      for (let i = 0; i < newJobs.length; i += 50) {
+        const batch = newJobs.slice(i, i + 50);
+        const { error, count } = await supabase
+          .from("scraped_jobs")
+          .upsert(batch, { onConflict: "hash", ignoreDuplicates: true });
         if (error) {
-          console.error(`Batch insert error at ${i}:`, error.message);
+          console.error(`Batch upsert error at ${i}:`, error.message);
         } else {
           inserted += batch.length;
         }
