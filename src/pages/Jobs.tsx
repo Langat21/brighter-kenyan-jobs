@@ -213,12 +213,12 @@ const Jobs = () => {
             {activeTab === "local" ? (
               <>
                 <p className="mb-4 text-sm text-muted-foreground">
-                  <span className="font-semibold text-foreground">{filteredKenyaJobs.length}</span> Kenya jobs found
+                  <span className="font-semibold text-foreground">{kenyaJobs.length}</span> Kenya jobs found
                   {kenyaLoading && " · Loading..."}
                 </p>
-                {filteredKenyaJobs.length > 0 ? (
+                {kenyaJobs.length > 0 ? (
                   <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-2">
-                    {filteredKenyaJobs.map((job) => (
+                    {kenyaJobs.map((job) => (
                       <ScrapedJobCard key={job.id} job={job} />
                     ))}
                   </div>
