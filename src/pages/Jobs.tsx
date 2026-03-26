@@ -1,12 +1,11 @@
-import { useState, useMemo } from "react";
+import { useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { Filter, X, Globe } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
-import JobCard from "@/components/JobCard";
 import ScrapedJobCard from "@/components/ScrapedJobCard";
-import { mockJobs, categories, locations } from "@/data/mockJobs";
+import { categories, locations } from "@/data/mockJobs";
 import { useScrapedJobs } from "@/hooks/useScrapedJobs";
 
 const jobTypes = ["Remote", "Hybrid", "On-site"];
@@ -25,7 +24,16 @@ const Jobs = () => {
   const [showFilters, setShowFilters] = useState(false);
   const [activeTab, setActiveTab] = useState<"local" | "global">("local");
 
-  // Scraped jobs from DB
+  // Kenya scraped jobs
+  const kenyaSources = ["brightermonday", "myjobmag", "fuzu", "linkedin"];
+  const { jobs: kenyaJobs, loading: kenyaLoading } = useScrapedJobs({
+    query: activeTab === "local" ? query : undefined,
+    category: activeTab === "local" ? selectedCategory : undefined,
+    location: activeTab === "local" ? (selectedLocation || "Kenya") : undefined,
+    limit: 200,
+  });
+
+  // Global remote scraped jobs
   const { jobs: scrapedJobs, loading: scrapedLoading } = useScrapedJobs({
     query: activeTab === "global" ? query : undefined,
     category: activeTab === "global" ? selectedCategory : undefined,
@@ -33,16 +41,16 @@ const Jobs = () => {
     limit: 200,
   });
 
-  const filtered = useMemo(() => {
-    return mockJobs.filter((job) => {
-      if (query && !job.title.toLowerCase().includes(query.toLowerCase()) && !job.company.toLowerCase().includes(query.toLowerCase()) && !job.skills.some(s => s.toLowerCase().includes(query.toLowerCase()))) return false;
-      if (selectedCategory && job.category !== selectedCategory) return false;
-      if (selectedJobType && job.jobType !== selectedJobType) return false;
-      if (selectedLevel && job.experienceLevel !== selectedLevel) return false;
-      if (selectedLocation && job.location !== selectedLocation) return false;
-      return true;
-    });
-  }, [query, selectedCategory, selectedJobType, selectedLevel, selectedLocation]);
+  // Filter Kenya jobs to only show Kenyan sources
+  const filteredKenyaJobs = kenyaJobs.filter(j =>
+    kenyaSources.includes(j.source) ||
+    (j.location || "").toLowerCase().includes("kenya") ||
+    (j.location || "").toLowerCase().includes("nairobi") ||
+    (j.location || "").toLowerCase().includes("mombasa") ||
+    (j.location || "").toLowerCase().includes("kisumu") ||
+    (j.location || "").toLowerCase().includes("nakuru") ||
+    (j.location || "").toLowerCase().includes("eldoret")
+  );
 
   const clearFilters = () => {
     setQuery("");
@@ -213,18 +221,23 @@ const Jobs = () => {
             {activeTab === "local" ? (
               <>
                 <p className="mb-4 text-sm text-muted-foreground">
-                  <span className="font-semibold text-foreground">{filtered.length}</span> jobs found
+                  <span className="font-semibold text-foreground">{filteredKenyaJobs.length}</span> Kenya jobs found
+                  {kenyaLoading && " · Loading..."}
                 </p>
-                {filtered.length > 0 ? (
+                {filteredKenyaJobs.length > 0 ? (
                   <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-2">
-                    {filtered.map((job) => (
-                      <JobCard key={job.id} job={job} />
+                    {filteredKenyaJobs.map((job) => (
+                      <ScrapedJobCard key={job.id} job={job} />
                     ))}
+                  </div>
+                ) : kenyaLoading ? (
+                  <div className="py-20 text-center">
+                    <p className="text-lg font-semibold text-foreground">Loading Kenya jobs...</p>
                   </div>
                 ) : (
                   <div className="py-20 text-center">
-                    <p className="text-lg font-semibold text-foreground">No jobs found</p>
-                    <p className="mt-1 text-sm text-muted-foreground">Try adjusting your filters</p>
+                    <p className="text-lg font-semibold text-foreground">No Kenya jobs found</p>
+                    <p className="mt-1 text-sm text-muted-foreground">Jobs are scraped from BrighterMonday, MyJobMag, Fuzu & LinkedIn</p>
                   </div>
                 )}
               </>
