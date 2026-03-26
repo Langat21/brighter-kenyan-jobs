@@ -4,9 +4,8 @@ import { Filter, X, Globe } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
-import JobCard from "@/components/JobCard";
 import ScrapedJobCard from "@/components/ScrapedJobCard";
-import { mockJobs, categories, locations } from "@/data/mockJobs";
+import { categories, locations } from "@/data/mockJobs";
 import { useScrapedJobs } from "@/hooks/useScrapedJobs";
 
 const jobTypes = ["Remote", "Hybrid", "On-site"];
