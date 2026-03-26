@@ -24,33 +24,25 @@ const Jobs = () => {
   const [showFilters, setShowFilters] = useState(false);
   const [activeTab, setActiveTab] = useState<"local" | "global">("local");
 
-  // Kenya scraped jobs
   const kenyaSources = ["brightermonday", "myjobmag", "fuzu", "linkedin"];
+  const globalSources = ["remotive", "arbeitnow", "remoteok"];
+
+  // Kenya scraped jobs — filter by Kenyan sources
   const { jobs: kenyaJobs, loading: kenyaLoading } = useScrapedJobs({
     query: activeTab === "local" ? query : undefined,
     category: activeTab === "local" ? selectedCategory : undefined,
-    location: activeTab === "local" ? (selectedLocation || "Kenya") : undefined,
+    sources: kenyaSources,
     limit: 200,
   });
 
-  // Global remote scraped jobs
+  // Global remote scraped jobs — exclude Kenyan sources
   const { jobs: scrapedJobs, loading: scrapedLoading } = useScrapedJobs({
     query: activeTab === "global" ? query : undefined,
     category: activeTab === "global" ? selectedCategory : undefined,
     location: activeTab === "global" ? selectedLocation : undefined,
+    sources: globalSources,
     limit: 200,
   });
-
-  // Filter Kenya jobs to only show Kenyan sources
-  const filteredKenyaJobs = kenyaJobs.filter(j =>
-    kenyaSources.includes(j.source) ||
-    (j.location || "").toLowerCase().includes("kenya") ||
-    (j.location || "").toLowerCase().includes("nairobi") ||
-    (j.location || "").toLowerCase().includes("mombasa") ||
-    (j.location || "").toLowerCase().includes("kisumu") ||
-    (j.location || "").toLowerCase().includes("nakuru") ||
-    (j.location || "").toLowerCase().includes("eldoret")
-  );
 
   const clearFilters = () => {
     setQuery("");
@@ -221,12 +213,12 @@ const Jobs = () => {
             {activeTab === "local" ? (
               <>
                 <p className="mb-4 text-sm text-muted-foreground">
-                  <span className="font-semibold text-foreground">{filteredKenyaJobs.length}</span> Kenya jobs found
+                  <span className="font-semibold text-foreground">{kenyaJobs.length}</span> Kenya jobs found
                   {kenyaLoading && " · Loading..."}
                 </p>
-                {filteredKenyaJobs.length > 0 ? (
+                {kenyaJobs.length > 0 ? (
                   <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-2">
-                    {filteredKenyaJobs.map((job) => (
+                    {kenyaJobs.map((job) => (
                       <ScrapedJobCard key={job.id} job={job} />
                     ))}
                   </div>
