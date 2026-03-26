@@ -221,18 +221,23 @@ const Jobs = () => {
             {activeTab === "local" ? (
               <>
                 <p className="mb-4 text-sm text-muted-foreground">
-                  <span className="font-semibold text-foreground">{filtered.length}</span> jobs found
+                  <span className="font-semibold text-foreground">{filteredKenyaJobs.length}</span> Kenya jobs found
+                  {kenyaLoading && " · Loading..."}
                 </p>
-                {filtered.length > 0 ? (
+                {filteredKenyaJobs.length > 0 ? (
                   <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-2">
-                    {filtered.map((job) => (
-                      <JobCard key={job.id} job={job} />
+                    {filteredKenyaJobs.map((job) => (
+                      <ScrapedJobCard key={job.id} job={job} />
                     ))}
+                  </div>
+                ) : kenyaLoading ? (
+                  <div className="py-20 text-center">
+                    <p className="text-lg font-semibold text-foreground">Loading Kenya jobs...</p>
                   </div>
                 ) : (
                   <div className="py-20 text-center">
-                    <p className="text-lg font-semibold text-foreground">No jobs found</p>
-                    <p className="mt-1 text-sm text-muted-foreground">Try adjusting your filters</p>
+                    <p className="text-lg font-semibold text-foreground">No Kenya jobs found</p>
+                    <p className="mt-1 text-sm text-muted-foreground">Jobs are scraped from BrighterMonday, MyJobMag, Fuzu & LinkedIn</p>
                   </div>
                 )}
               </>
