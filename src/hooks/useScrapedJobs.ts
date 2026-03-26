@@ -23,6 +23,8 @@ export function useScrapedJobs(filters?: {
   category?: string;
   location?: string;
   limit?: number;
+  sources?: string[];
+  excludeSources?: string[];
 }) {
   const [jobs, setJobs] = useState<ScrapedJob[]>([]);
   const [loading, setLoading] = useState(true);
@@ -50,6 +52,14 @@ export function useScrapedJobs(filters?: {
           `title.ilike.%${filters.query}%,company.ilike.%${filters.query}%`
         );
       }
+      if (filters?.sources && filters.sources.length > 0) {
+        query = query.in("source", filters.sources);
+      }
+      if (filters?.excludeSources && filters.excludeSources.length > 0) {
+        for (const s of filters.excludeSources) {
+          query = query.neq("source", s);
+        }
+      }
 
       const { data, error: err } = await query;
 
@@ -62,7 +72,7 @@ export function useScrapedJobs(filters?: {
     };
 
     fetchJobs();
-  }, [filters?.query, filters?.category, filters?.location, filters?.limit]);
+  }, [filters?.query, filters?.category, filters?.location, filters?.limit, filters?.sources?.join(","), filters?.excludeSources?.join(",")]);
 
   return { jobs, loading, error };
 }
