@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { Filter, X, Globe } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -24,7 +24,16 @@ const Jobs = () => {
   const [showFilters, setShowFilters] = useState(false);
   const [activeTab, setActiveTab] = useState<"local" | "global">("local");
 
-  // Scraped jobs from DB
+  // Kenya scraped jobs
+  const kenyaSources = ["brightermonday", "myjobmag", "fuzu", "linkedin"];
+  const { jobs: kenyaJobs, loading: kenyaLoading } = useScrapedJobs({
+    query: activeTab === "local" ? query : undefined,
+    category: activeTab === "local" ? selectedCategory : undefined,
+    location: activeTab === "local" ? (selectedLocation || "Kenya") : undefined,
+    limit: 200,
+  });
+
+  // Global remote scraped jobs
   const { jobs: scrapedJobs, loading: scrapedLoading } = useScrapedJobs({
     query: activeTab === "global" ? query : undefined,
     category: activeTab === "global" ? selectedCategory : undefined,
@@ -32,16 +41,16 @@ const Jobs = () => {
     limit: 200,
   });
 
-  const filtered = useMemo(() => {
-    return mockJobs.filter((job) => {
-      if (query && !job.title.toLowerCase().includes(query.toLowerCase()) && !job.company.toLowerCase().includes(query.toLowerCase()) && !job.skills.some(s => s.toLowerCase().includes(query.toLowerCase()))) return false;
-      if (selectedCategory && job.category !== selectedCategory) return false;
-      if (selectedJobType && job.jobType !== selectedJobType) return false;
-      if (selectedLevel && job.experienceLevel !== selectedLevel) return false;
-      if (selectedLocation && job.location !== selectedLocation) return false;
-      return true;
-    });
-  }, [query, selectedCategory, selectedJobType, selectedLevel, selectedLocation]);
+  // Filter Kenya jobs to only show Kenyan sources
+  const filteredKenyaJobs = kenyaJobs.filter(j =>
+    kenyaSources.includes(j.source) ||
+    (j.location || "").toLowerCase().includes("kenya") ||
+    (j.location || "").toLowerCase().includes("nairobi") ||
+    (j.location || "").toLowerCase().includes("mombasa") ||
+    (j.location || "").toLowerCase().includes("kisumu") ||
+    (j.location || "").toLowerCase().includes("nakuru") ||
+    (j.location || "").toLowerCase().includes("eldoret")
+  );
 
   const clearFilters = () => {
     setQuery("");
