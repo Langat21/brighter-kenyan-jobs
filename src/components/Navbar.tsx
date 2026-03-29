@@ -1,14 +1,23 @@
 import { useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { Briefcase, Menu, X } from "lucide-react";
+import { Briefcase, Menu, X, Shield } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useAuth } from "@/contexts/AuthContext";
+import { useUserRole } from "@/hooks/useUserRole";
+import { useUserProfile } from "@/hooks/useUserProfile";
 
 const Navbar = () => {
   const [mobileOpen, setMobileOpen] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
   const { user, signOut } = useAuth();
+  const { isAdmin } = useUserRole();
+  const { profile } = useUserProfile();
+
+  const initials = profile?.display_name
+    ? profile.display_name.split(" ").map(n => n[0]).join("").toUpperCase().slice(0, 2)
+    : user?.email?.slice(0, 2).toUpperCase() ?? "";
 
   return (
     <header className="sticky top-0 z-50 border-b border-border bg-card/80 backdrop-blur-lg">
@@ -48,7 +57,19 @@ const Navbar = () => {
         <div className="hidden items-center gap-3 md:flex">
           {user ? (
             <>
-              <span className="text-sm text-muted-foreground">{user.email}</span>
+              {isAdmin && (
+                <Button variant="ghost" size="sm" onClick={() => navigate("/admin")} className="gap-1.5 text-secondary">
+                  <Shield className="h-4 w-4" />
+                  Admin
+                </Button>
+              )}
+              <div className="flex items-center gap-2">
+                <Avatar className="h-8 w-8">
+                  <AvatarImage src={profile?.avatar_url ?? undefined} />
+                  <AvatarFallback className="bg-primary text-xs text-primary-foreground">{initials}</AvatarFallback>
+                </Avatar>
+                <span className="text-sm text-muted-foreground">{profile?.display_name || user.email}</span>
+              </div>
               <Button variant="ghost" size="sm" onClick={() => signOut()}>
                 Log Out
               </Button>
@@ -83,9 +104,24 @@ const Navbar = () => {
           </nav>
           <div className="mt-3 flex flex-col gap-2">
             {user ? (
-              <Button variant="outline" size="sm" className="w-full" onClick={() => { signOut(); setMobileOpen(false); }}>
-                Log Out
-              </Button>
+              <>
+                <div className="flex items-center gap-2 px-3 py-2">
+                  <Avatar className="h-8 w-8">
+                    <AvatarImage src={profile?.avatar_url ?? undefined} />
+                    <AvatarFallback className="bg-primary text-xs text-primary-foreground">{initials}</AvatarFallback>
+                  </Avatar>
+                  <span className="text-sm font-medium text-foreground">{profile?.display_name || user.email}</span>
+                </div>
+                {isAdmin && (
+                  <Button variant="outline" size="sm" className="w-full gap-1.5 text-secondary" onClick={() => { navigate("/admin"); setMobileOpen(false); }}>
+                    <Shield className="h-4 w-4" />
+                    Admin Panel
+                  </Button>
+                )}
+                <Button variant="outline" size="sm" className="w-full" onClick={() => { signOut(); setMobileOpen(false); }}>
+                  Log Out
+                </Button>
+              </>
             ) : (
               <>
                 <Button variant="outline" size="sm" className="w-full" onClick={() => { navigate("/auth"); setMobileOpen(false); }}>Log In</Button>
