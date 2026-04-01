@@ -52,7 +52,6 @@ const ScrapedJobCard = ({ job }: { job: ScrapedJob }) => {
         onClick={handleClick}
         className="group block rounded-xl border border-border bg-card p-5 shadow-card transition-all duration-200 hover:shadow-card-hover hover:-translate-y-0.5 cursor-pointer overflow-hidden"
       >
-      >
         <div className="flex items-start justify-between gap-3 min-w-0">
           <div className="flex items-center gap-3 min-w-0 overflow-hidden">
             <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-muted text-sm font-bold text-foreground">
