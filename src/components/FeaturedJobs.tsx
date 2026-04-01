@@ -1,11 +1,11 @@
 import { Link } from "react-router-dom";
 import { ArrowRight } from "lucide-react";
-import { mockJobs } from "@/data/mockJobs";
-import JobCard from "@/components/JobCard";
+import ScrapedJobCard from "@/components/ScrapedJobCard";
+import { useScrapedJobs } from "@/hooks/useScrapedJobs";
 import { motion } from "framer-motion";
 
 const FeaturedJobs = () => {
-  const featured = mockJobs.slice(0, 6);
+  const { jobs, loading } = useScrapedJobs({ limit: 6 });
 
   return (
     <section className="bg-muted/50 py-16 md:py-20">
@@ -16,7 +16,7 @@ const FeaturedJobs = () => {
               Latest Opportunities
             </h2>
             <p className="mt-1 text-sm text-muted-foreground">
-              Fresh job postings from verified Kenyan employers
+              Fresh job postings from verified employers
             </p>
           </div>
           <Link
@@ -27,19 +27,30 @@ const FeaturedJobs = () => {
           </Link>
         </div>
 
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {featured.map((job, i) => (
-            <motion.div
-              key={job.id}
-              initial={{ opacity: 0, y: 16 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ delay: i * 0.06 }}
-            >
-              <JobCard job={job} />
-            </motion.div>
-          ))}
-        </div>
+        {loading ? (
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <div key={i} className="h-40 animate-pulse rounded-xl bg-muted" />
+            ))}
+          </div>
+        ) : jobs.length > 0 ? (
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {jobs.map((job, i) => (
+              <motion.div
+                key={job.id}
+                initial={{ opacity: 0, y: 16 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: i * 0.06 }}
+                className="min-w-0"
+              >
+                <ScrapedJobCard job={job} />
+              </motion.div>
+            ))}
+          </div>
+        ) : (
+          <p className="text-center text-muted-foreground py-10">No jobs available yet.</p>
+        )}
 
         <div className="mt-8 text-center sm:hidden">
           <Link
