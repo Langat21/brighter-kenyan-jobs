@@ -1,4 +1,3 @@
-import { Briefcase } from "lucide-react";
 import { Link } from "react-router-dom";
 
 const Footer = () => {
@@ -8,9 +7,6 @@ const Footer = () => {
         <div className="grid grid-cols-2 gap-8 md:grid-cols-4">
           <div className="col-span-2 md:col-span-1">
             <Link to="/" className="flex items-center gap-2 mb-4">
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-hero">
-                <Briefcase className="h-4 w-4 text-primary-foreground" />
-              </div>
               <span className="text-lg font-bold text-foreground">
                 Brighter<span className="text-secondary">Jobs</span>
               </span>
