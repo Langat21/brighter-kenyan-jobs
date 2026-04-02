@@ -35,33 +35,51 @@ export const useWeeklyFreeView = () => {
   const canViewFree = viewCount < FREE_VIEWS_PER_WEEK;
 
   const recordView = async (jobIdentifier: string) => {
-    if (!user) return;
+    if (!user) return false;
 
     // Check if already viewed this specific job (don't double-count)
-    const { count } = await supabase
+    const { count, error: existingViewError } = await supabase
       .from("job_views")
       .select("id", { count: "exact", head: true })
       .eq("user_id", user.id)
       .eq("job_identifier", jobIdentifier)
       .gte("viewed_at", weekStart);
 
-    if ((count ?? 0) > 0) return; // already viewed
+    if (existingViewError) {
+      console.error("Failed to check existing free job view", existingViewError);
+      return false;
+    }
 
-    await supabase.from("job_views").insert({
+    if ((count ?? 0) > 0) return true;
+
+    const { error } = await supabase.from("job_views").insert({
       user_id: user.id,
       job_identifier: jobIdentifier,
     });
+
+    if (error) {
+      console.error("Failed to record free job view", error);
+      return false;
+    }
+
     setViewCount((c) => c + 1);
+    return true;
   };
 
   const hasViewedJob = async (jobIdentifier: string) => {
     if (!user) return false;
-    const { count } = await supabase
+    const { count, error } = await supabase
       .from("job_views")
       .select("id", { count: "exact", head: true })
       .eq("user_id", user.id)
       .eq("job_identifier", jobIdentifier)
       .gte("viewed_at", weekStart);
+
+    if (error) {
+      console.error("Failed to check viewed job state", error);
+      return false;
+    }
+
     return (count ?? 0) > 0;
   };
 
