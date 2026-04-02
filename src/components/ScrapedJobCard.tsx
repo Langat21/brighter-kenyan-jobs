@@ -34,35 +34,58 @@ const ScrapedJobCard = ({ job }: { job: ScrapedJob }) => {
       ? `$${(job.salary_min / 1000).toFixed(0)}K – $${(job.salary_max / 1000).toFixed(0)}K`
       : null;
 
-  const openJob = () => {
+  const openJob = (targetWindow?: Window | null) => {
+    if (targetWindow && !targetWindow.closed) {
+      targetWindow.location.href = job.source_url;
+      return;
+    }
+
     window.open(job.source_url, "_blank", "noopener,noreferrer");
   };
 
   const handleClick = async (e: React.MouseEvent) => {
     e.preventDefault();
+
     if (!user) {
       toast.info("Please sign in to access job listings");
       navigate("/auth");
       return;
     }
+
+    const pendingWindow = window.open("", "_blank");
+    if (pendingWindow) {
+      pendingWindow.opener = null;
+    }
+
     if (isSubscribed) {
-      openJob();
+      openJob(pendingWindow);
       return;
     }
+
     // Already viewed this job — allow re-access
     const alreadyViewed = await hasViewedJob(job.id);
     if (alreadyViewed) {
-      openJob();
+      openJob(pendingWindow);
       return;
     }
+
     // Free view available
     if (canViewFree) {
-      await recordView(job.id);
+      const recorded = await recordView(job.id);
+
+      if (!recorded) {
+        pendingWindow?.close();
+        toast.error("We couldn't open this job right now. Please try again.");
+        return;
+      }
+
       toast.info("You used your free weekly job view!");
-      openJob();
+      openJob(pendingWindow);
       return;
     }
+
     // Must subscribe
+    pendingWindow?.close();
     setPaymentOpen(true);
   };
 
