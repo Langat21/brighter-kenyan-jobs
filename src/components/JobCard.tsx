@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { MapPin, Clock, Bookmark, BadgeCheck } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useSubscription } from "@/hooks/useSubscription";
+import { useWeeklyFreeView } from "@/hooks/useWeeklyFreeView";
 import MpesaPaymentModal from "@/components/MpesaPaymentModal";
 import { toast } from "sonner";
 import { type Job } from "@/data/mockJobs";
@@ -17,23 +18,38 @@ const JobCard = ({ job }: { job: Job }) => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { isSubscribed, recordSubscription } = useSubscription();
+  const { canViewFree, recordView, hasViewedJob } = useWeeklyFreeView();
   const [paymentOpen, setPaymentOpen] = useState(false);
 
   const salaryLabel = `KES ${(job.salaryMin / 1000).toFixed(0)}K – ${(job.salaryMax / 1000).toFixed(0)}K`;
   const daysAgo = Math.max(0, Math.floor((Date.now() - new Date(job.postedAt).getTime()) / 86400000));
 
-  const handleClick = (e: React.MouseEvent) => {
+  const handleClick = async (e: React.MouseEvent) => {
     e.preventDefault();
     if (!user) {
       toast.info("Please sign in to access job listings");
       navigate("/auth");
       return;
     }
-    if (!isSubscribed) {
-      setPaymentOpen(true);
+    if (isSubscribed) {
+      navigate(`/jobs/${job.id}`);
       return;
     }
-    navigate(`/jobs/${job.id}`);
+    // Check if they already viewed this job (always allow re-access)
+    const alreadyViewed = await hasViewedJob(job.id);
+    if (alreadyViewed) {
+      navigate(`/jobs/${job.id}`);
+      return;
+    }
+    // Free view available
+    if (canViewFree) {
+      await recordView(job.id);
+      toast.info("You used your free weekly job view!");
+      navigate(`/jobs/${job.id}`);
+      return;
+    }
+    // No free views left
+    setPaymentOpen(true);
   };
 
   return (

@@ -8,6 +8,7 @@ import JobCard from "@/components/JobCard";
 import MpesaPaymentModal from "@/components/MpesaPaymentModal";
 import { useAuth } from "@/contexts/AuthContext";
 import { useSubscription } from "@/hooks/useSubscription";
+import { useWeeklyFreeView } from "@/hooks/useWeeklyFreeView";
 import { mockJobs } from "@/data/mockJobs";
 import { toast } from "sonner";
 
@@ -17,6 +18,7 @@ const JobDetail = () => {
   const job = mockJobs.find((j) => j.id === id);
   const { user } = useAuth();
   const { isSubscribed, recordSubscription } = useSubscription();
+  const { canViewFree, recordView, hasViewedJob } = useWeeklyFreeView();
   const [paymentOpen, setPaymentOpen] = useState(false);
 
   if (!job) {
@@ -36,7 +38,7 @@ const JobDetail = () => {
   const daysAgo = Math.max(0, Math.floor((Date.now() - new Date(job.postedAt).getTime()) / 86400000));
   const similar = mockJobs.filter((j) => j.id !== job.id && j.category === job.category).slice(0, 3);
 
-  const handleApply = () => {
+  const handleApply = async () => {
     if (!user) {
       toast.info("Please sign in to apply for jobs");
       navigate("/auth");
@@ -46,7 +48,16 @@ const JobDetail = () => {
       toast.success("Application submitted! You'll hear back soon.");
       return;
     }
-    // Not subscribed — show payment modal
+    const alreadyViewed = await hasViewedJob(id!);
+    if (alreadyViewed) {
+      toast.success("Application submitted! You'll hear back soon.");
+      return;
+    }
+    if (canViewFree) {
+      await recordView(id!);
+      toast.success("Application submitted using your free weekly view!");
+      return;
+    }
     setPaymentOpen(true);
   };
 
