@@ -8,6 +8,7 @@ import JobCard from "@/components/JobCard";
 import MpesaPaymentModal from "@/components/MpesaPaymentModal";
 import { useAuth } from "@/contexts/AuthContext";
 import { useSubscription } from "@/hooks/useSubscription";
+import { useWeeklyFreeView } from "@/hooks/useWeeklyFreeView";
 import { mockJobs } from "@/data/mockJobs";
 import { toast } from "sonner";
 
