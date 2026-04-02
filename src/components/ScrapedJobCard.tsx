@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { MapPin, Clock, ExternalLink, Globe } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useSubscription } from "@/hooks/useSubscription";
+import { useWeeklyFreeView } from "@/hooks/useWeeklyFreeView";
 import MpesaPaymentModal from "@/components/MpesaPaymentModal";
 import { toast } from "sonner";
 import type { ScrapedJob } from "@/hooks/useScrapedJobs";
@@ -21,6 +22,7 @@ const ScrapedJobCard = ({ job }: { job: ScrapedJob }) => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { isSubscribed, recordSubscription } = useSubscription();
+  const { canViewFree, recordView, hasViewedJob } = useWeeklyFreeView();
   const [paymentOpen, setPaymentOpen] = useState(false);
 
   const daysAgo = job.posted_at
@@ -32,18 +34,36 @@ const ScrapedJobCard = ({ job }: { job: ScrapedJob }) => {
       ? `$${(job.salary_min / 1000).toFixed(0)}K – $${(job.salary_max / 1000).toFixed(0)}K`
       : null;
 
-  const handleClick = (e: React.MouseEvent) => {
+  const openJob = () => {
+    window.open(job.source_url, "_blank", "noopener,noreferrer");
+  };
+
+  const handleClick = async (e: React.MouseEvent) => {
     e.preventDefault();
     if (!user) {
       toast.info("Please sign in to access job listings");
       navigate("/auth");
       return;
     }
-    if (!isSubscribed) {
-      setPaymentOpen(true);
+    if (isSubscribed) {
+      openJob();
       return;
     }
-    window.open(job.source_url, "_blank", "noopener,noreferrer");
+    // Already viewed this job — allow re-access
+    const alreadyViewed = await hasViewedJob(job.id);
+    if (alreadyViewed) {
+      openJob();
+      return;
+    }
+    // Free view available
+    if (canViewFree) {
+      await recordView(job.id);
+      toast.info("You used your free weekly job view!");
+      openJob();
+      return;
+    }
+    // Must subscribe
+    setPaymentOpen(true);
   };
 
   return (
@@ -127,7 +147,7 @@ const ScrapedJobCard = ({ job }: { job: ScrapedJob }) => {
           await recordSubscription(transactionId);
           toast.success("Subscription active! Opening job...");
           setPaymentOpen(false);
-          window.open(job.source_url, "_blank", "noopener,noreferrer");
+          openJob();
         }}
       />
     </>
