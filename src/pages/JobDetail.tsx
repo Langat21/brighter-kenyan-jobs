@@ -18,6 +18,7 @@ const JobDetail = () => {
   const job = mockJobs.find((j) => j.id === id);
   const { user } = useAuth();
   const { isSubscribed, recordSubscription } = useSubscription();
+  const { canViewFree, recordView, hasViewedJob } = useWeeklyFreeView();
   const [paymentOpen, setPaymentOpen] = useState(false);
 
   if (!job) {
