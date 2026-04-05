@@ -21,11 +21,19 @@ interface Subscription {
   profile?: { display_name: string | null; phone: string | null } | null;
 }
 
+interface User {
+  user_id: string;
+  display_name: string | null;
+  phone: string | null;
+  created_at: string;
+}
+
 const Admin = () => {
   const { user, loading: authLoading } = useAuth();
   const { isAdmin, loading: roleLoading } = useUserRole();
   const navigate = useNavigate();
   const [subscriptions, setSubscriptions] = useState<Subscription[]>([]);
+  const [users, setUsers] = useState<User[]>([]);
   const [loadingData, setLoadingData] = useState(true);
 
   useEffect(() => {
@@ -35,8 +43,9 @@ const Admin = () => {
         return;
       }
       fetchSubscriptions();
+      fetchUsers();
     }
-  }, [user, isAdmin, authLoading, roleLoading]);
+  }, [user, isAdmin, authLoading, roleLoading, navigate]);
 
   const fetchSubscriptions = async () => {
     const { data: subs } = await supabase
@@ -55,6 +64,15 @@ const Admin = () => {
       const profileMap = new Map(profiles?.map(p => [p.user_id, p]) ?? []);
       setSubscriptions(subs.map(s => ({ ...s, profile: profileMap.get(s.user_id) })));
     }
+  };
+
+  const fetchUsers = async () => {
+    const { data: allUsers } = await supabase
+      .from("profiles")
+      .select("user_id, display_name, phone, created_at")
+      .order("created_at", { ascending: false });
+
+    setUsers(allUsers ?? []);
     setLoadingData(false);
   };
 
@@ -163,6 +181,40 @@ const Admin = () => {
                       </TableRow>
                     );
                   })}
+                </TableBody>
+              </Table>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card className="mt-8">
+          <CardHeader>
+            <CardTitle>Registered Users</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {loadingData ? (
+              <div className="flex justify-center py-8">
+                <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+              </div>
+            ) : users.length === 0 ? (
+              <p className="py-8 text-center text-muted-foreground">No users registered yet</p>
+            ) : (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Name</TableHead>
+                    <TableHead>Phone Number</TableHead>
+                    <TableHead>Joined</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {users.map((u) => (
+                    <TableRow key={u.user_id}>
+                      <TableCell className="font-medium">{u.display_name || "—"}</TableCell>
+                      <TableCell>{u.phone || "—"}</TableCell>
+                      <TableCell>{format(new Date(u.created_at), "MMM d, yyyy")}</TableCell>
+                    </TableRow>
+                  ))}
                 </TableBody>
               </Table>
             )}
